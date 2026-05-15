@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS — Analytics Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#07070b;--bg2:#0f0f17;--bg3:#16161f;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#f0ede8;--muted:#7a7890;--gold:#d4a843;--violet:#7c6ff7;--teal:#2dd4a0;--red:#e55;--green:#2dd46a;--ff:'Plus Jakarta Sans',sans-serif}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);font-size:14px}
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
+#nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:18px;font-weight:600;letter-spacing:2px;color:var(--text)}
+.nav-logo span{color:var(--gold)}
+.nav-badge{background:rgba(124,111,247,0.15);border:1px solid rgba(124,111,247,0.25);color:var(--violet);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600}
+#main{max-width:1280px;margin:0 auto;padding:28px 32px}
+.page-title{font-size:24px;font-weight:600;letter-spacing:-0.5px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:20px}
+.stat-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.stat-val{font-size:32px;font-weight:700;letter-spacing:-1px}
+.stat-val.gold{color:var(--gold)}
+.stat-val.violet{color:var(--violet)}
+.stat-val.teal{color:var(--teal)}
+.stat-val.green{color:var(--green)}
+.stat-delta{font-size:12px;margin-top:6px}
+.delta-up{color:var(--green)}.delta-dn{color:var(--red)}
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:28px}
+.chart-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:20px}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.chart-title span{font-size:11px;color:var(--muted);font-weight:400}
+/* AB TEST */
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.ab-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:20px}
+.ab-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.ab-dot{width:10px;height:10px;border-radius:50%}
+.ab-title{font-size:14px;font-weight:600}
+.ab-metric{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.ab-metric:last-child{border:none}
+.ab-metric-label{font-size:12px;color:var(--muted)}
+.ab-metric-val{font-size:16px;font-weight:600}
+.badge-winner{background:rgba(45,212,160,0.12);border:1px solid rgba(45,212,160,0.2);color:var(--teal);padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+/* EVENTS TABLE */
+.table-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;overflow:hidden;margin-bottom:28px}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 20px;text-align:left;background:var(--bg3)}
+td{padding:12px 20px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.ev-badge{padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600}
+.ev-purchase{background:rgba(45,212,160,0.1);color:var(--teal)}
+.ev-view{background:rgba(124,111,247,0.1);color:var(--violet)}
+.ev-cart{background:rgba(212,168,67,0.1);color:var(--gold)}
+.ev-wish{background:rgba(232,85,85,0.1);color:var(--red)}
+/* REFRESH BTN */
+.refresh-btn{background:var(--gold);color:#1a1000;border:none;padding:8px 18px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
+.refresh-btn:hover{opacity:0.85}
+.loading{color:var(--muted);font-size:13px;padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<nav id="nav">
+  <div class="nav-logo">NEX<span>US</span></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-badge">Analytics Dashboard</div>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</nav>
+<div id="main">
+  <div class="page-title">Analytics Overview</div>
+  <div class="page-sub" id="date-range">Loading...</div>
+
+  <!-- STAT CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Sessions</div><div class="stat-val violet" id="s-sessions">—</div><div class="stat-delta" id="d-sessions"></div></div>
+    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-val gold" id="s-revenue">—</div><div class="stat-delta" id="d-revenue"></div></div>
+    <div class="stat-card"><div class="stat-label">AI CTR</div><div class="stat-val teal" id="s-ctr">—</div><div class="stat-delta" id="d-ctr"></div></div>
+    <div class="stat-card"><div class="stat-label">Orders Placed</div><div class="stat-val green" id="s-orders">—</div><div class="stat-delta" id="d-orders"></div></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Revenue & Sessions (Last 14 days) <span id="chart-update"></span></div>
+      <canvas id="chart-revenue" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Events by Type</div>
+      <canvas id="chart-events" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- A/B TEST -->
+  <div style="font-size:14px;font-weight:600;margin-bottom:12px">A/B Test — Claude vs Collaborative Filtering</div>
+  <div class="ab-grid">
+    <div class="ab-card" id="ab-control">
+      <div class="ab-header"><div class="ab-dot" style="background:#7c6ff7"></div><div class="ab-title">Control — Collaborative Filtering</div></div>
+      <div class="loading">Loading...</div>
+    </div>
+    <div class="ab-card" id="ab-treatment">
+      <div class="ab-header"><div class="ab-dot" style="background:#d4a843"></div><div class="ab-title">Treatment — Claude AI</div></div>
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- RECENT EVENTS TABLE -->
+  <div class="table-card">
+    <div class="table-header">Recent Events</div>
+    <table>
+      <thead><tr><th>Time</th><th>Event</th><th>Product</th><th>Session</th><th>Variant</th></tr></thead>
+      <tbody id="events-tbody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- TOP PRODUCTS -->
+  <div class="table-card">
+    <div class="table-header">Top Products by Engagement</div>
+    <table>
+      <thead><tr><th>Product</th><th>Category</th><th>Views</th><th>Cart Adds</th><th>Purchases</th><th>Score</th></tr></thead>
+      <tbody id="products-tbody"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+// ── REPLACE WITH YOUR SUPABASE CREDENTIALS ────────────────
+const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON = 'YOUR_ANON_KEY';
+// ─────────────────────────────────────────────────────────
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let revChart, evChart;
+
+async function loadAll() {
+  document.getElementById('date-range').textContent =
+    `Last updated: ${new Date().toLocaleString()}`;
+  await Promise.all([loadStats(), loadCharts(), loadAB(), loadEvents(), loadTopProducts()]);
+}
+
+async function loadStats() {
+  // Sessions (distinct session_ids in last 30 days)
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
+  const { data: ev } = await db.from('user_events').select('session_id, created_at').gte('created_at', since30);
+  const sessions = new Set(ev?.map(e => e.session_id) ?? []).size;
+  document.getElementById('s-sessions').textContent = sessions.toLocaleString();
+
+  // Revenue
+  const { data: orders } = await db.from('orders').select('total').gte('created_at', since30);
+  const revenue = orders?.reduce((a,o) => a + Number(o.total), 0) ?? 0;
+  document.getElementById('s-revenue').textContent = `₹${revenue.toLocaleString()}`;
+  document.getElementById('s-orders').textContent = (orders?.length ?? 0).toLocaleString();
+
+  // AI CTR from recommendation_logs
+  const { data: logs } = await db.from('recommendation_logs').select('ctr').gte('shown_at', since30).not('ctr', 'is', null);
+  const avgCTR = logs?.length ? logs.reduce((a,l) => a + Number(l.ctr), 0) / logs.length : 0;
+  document.getElementById('s-ctr').textContent = `${(avgCTR * 100).toFixed(1)}%`;
+}
+
+async function loadCharts() {
+  const days = 14;
+  const labels = [], revData = [], sesData = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 864e5);
+    labels.push(d.toLocaleDateString('en', { month:'short', day:'numeric' }));
+    const start = new Date(d.setHours(0,0,0,0)).toISOString();
+    const end   = new Date(d.setHours(23,59,59,999)).toISOString();
+    const { data: ord } = await db.from('orders').select('total').gte('created_at', start).lte('created_at', end);
+    const { data: evs } = await db.from('user_events').select('session_id').gte('created_at', start).lte('created_at', end);
+    revData.push(ord?.reduce((a,o) => a + Number(o.total), 0) ?? 0);
+    sesData.push(new Set(evs?.map(e => e.session_id) ?? []).size);
+  }
+
+  if (revChart) revChart.destroy();
+  revChart = new Chart(document.getElementById('chart-revenue'), {
+    data: {
+      labels,
+      datasets: [
+        { type:'bar',  label:'Revenue (₹)', data:revData, backgroundColor:'rgba(212,168,67,0.25)', borderColor:'#d4a843', borderWidth:1, yAxisID:'y1' },
+        { type:'line', label:'Sessions',    data:sesData, borderColor:'#7c6ff7', borderWidth:2, fill:false, tension:0.4, yAxisID:'y2' }
+      ]
+    },
+    options: { responsive:true, plugins:{legend:{labels:{color:'#7a7890',font:{size:11}}}},
+      scales:{
+        x:{ticks:{color:'#7a7890',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y1:{position:'left',ticks:{color:'#d4a843',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y2:{position:'right',ticks:{color:'#7c6ff7',font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+
+  // Events by type doughnut
+  const TYPES = ['view','add_cart','purchase','add_wish','search'];
+  const COLORS = ['#7c6ff7','#d4a843','#2dd4a0','#e55','#2dd46a'];
+  const counts = await Promise.all(TYPES.map(t => db.from('user_events').select('id',{count:'exact'}).eq('event_type',t)));
+  if (evChart) evChart.destroy();
+  evChart = new Chart(document.getElementById('chart-events'), {
+    type:'doughnut',
+    data:{ labels:TYPES, datasets:[{ data:counts.map(r=>r.count??0), backgroundColor:COLORS, borderWidth:0 }] },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{color:'#7a7890',font:{size:11},padding:12}} } }
+  });
+}
+
+async function loadAB() {
+  const variants = ['control','treatment'];
+  const labels   = { control:'Collaborative Filtering', treatment:'Claude AI' };
+  const colors   = { control:'#7c6ff7', treatment:'#d4a843' };
+
+  const { data: logs } = await db.from('recommendation_logs')
+    .select('ab_variant, ctr, conversion_rate, clicked_ids, recommended_ids');
+
+  for (const v of variants) {
+    const vl = logs?.filter(l => l.ab_variant === v) ?? [];
+    const avgCTR = vl.length ? vl.reduce((a,l) => a + Number(l.ctr ?? 0), 0) / vl.length : 0;
+    const clicks = vl.reduce((a,l) => a + (l.clicked_ids?.length ?? 0), 0);
+    const shown  = vl.reduce((a,l) => a + (l.recommended_ids?.length ?? 0), 0);
+    const winner = v === 'treatment' && avgCTR > 0.05;
+    document.getElementById(`ab-${v}`).innerHTML = `
+      <div class="ab-header">
+        <div class="ab-dot" style="background:${colors[v]}"></div>
+        <div class="ab-title">${v === 'control' ? 'Control' : 'Treatment'} — ${labels[v]}</div>
+        ${winner ? '<span class="badge-winner">WINNER</span>' : ''}
+      </div>
+      <div class="ab-metric"><span class="ab-metric-label">Sessions</span><span class="ab-metric-val">${vl.length}</span></div>
+      <div class="ab-metric"><span class="ab-metric-label">Avg CTR</span><span class="ab-metric-val" style="color:${colors[v]}">${(avgCTR*100).toFixed(2)}%</span></div>
+      <div class="ab-metric"><span class="ab-metric-label">Total Clicks</span><span class="ab-metric-val">${clicks}</span></div>
+      <div class="ab-metric"><span class="ab-metric-label">Items Shown</span><span class="ab-metric-val">${shown}</span></div>
+    `;
+  }
+}
+
+async function loadEvents() {
+  const { data } = await db.from('user_events')
+    .select('created_at, event_type, product_id, session_id, ab_variant, products(name)')
+    .order('created_at', { ascending:false })
+    .limit(20);
+  const BADGE = { purchase:'ev-purchase', view:'ev-view', add_cart:'ev-cart', add_wish:'ev-wish' };
+  document.getElementById('events-tbody').innerHTML = (data ?? []).map(e => `
+    <tr>
+      <td style="color:var(--muted)">${new Date(e.created_at).toLocaleTimeString()}</td>
+      <td><span class="ev-badge ${BADGE[e.event_type]??''}">${e.event_type}</span></td>
+      <td>${e.products?.name ?? '—'}</td>
+      <td style="color:var(--muted);font-size:11px">${e.session_id?.slice(0,8)}...</td>
+      <td style="color:var(--muted)">${e.ab_variant ?? '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);padding:20px">No events yet</td></tr>';
+}
+
+async function loadTopProducts() {
+  const { data } = await db.from('user_events')
+    .select('product_id, event_type, products(name, category)')
+    .not('product_id', 'is', null)
+    .limit(500);
+  if (!data?.length) { document.getElementById('products-tbody').innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">No data yet</td></tr>'; return; }
+
+  const map = {};
+  const W = { view:1, add_cart:4, purchase:10, add_wish:3 };
+  for (const e of data) {
+    const id = e.product_id;
+    if (!map[id]) map[id] = { name: e.products?.name, cat: e.products?.category, view:0, add_cart:0, purchase:0, score:0 };
+    map[id][e.event_type] = (map[id][e.event_type] ?? 0) + 1;
+    map[id].score += W[e.event_type] ?? 0;
+  }
+  const top = Object.entries(map).sort(([,a],[,b]) => b.score - a.score).slice(0, 10);
+  document.getElementById('products-tbody').innerHTML = top.map(([,p]) => `
+    <tr>
+      <td>${p.name ?? '—'}</td>
+      <td style="color:var(--muted)">${p.cat ?? '—'}</td>
+      <td>${p.view ?? 0}</td>
+      <td style="color:var(--gold)">${p.add_cart ?? 0}</td>
+      <td style="color:var(--teal)">${p.purchase ?? 0}</td>
+      <td style="color:var(--violet);font-weight:600">${p.score}</td>
+    </tr>`).join('');
+}
+
+loadAll();
+setInterval(loadAll, 60000); // auto-refresh every 60s
+</script>
+</body>
+</html>
