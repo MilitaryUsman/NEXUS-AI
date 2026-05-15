@@ -6,8 +6,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // ── FILL THESE IN FROM: Supabase Dashboard → Settings → API ──
-const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON = 'YOUR_ANON_KEY';
+const SUPABASE_URL  = 'https://chwejrooclemlvrelvqi.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNod2Vqcm9vY2xlbWx2cmVsdnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjIyMzQsImV4cCI6MjA5NDI5ODIzNH0.86dVW61PUpi96hg55yA0F8HSB412wFMzCWjhT6P07gg';
 // ─────────────────────────────────────────────────────────────
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
