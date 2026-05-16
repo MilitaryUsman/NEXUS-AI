@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS Advanced — AI Commerce</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#07070b;--bg2:#0f0f17;--bg3:#16161f;--bg4:#1e1e2a;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);--text:#f0ede8;--muted:#7a7890;--gold:#d4a843;--gold2:#e8c46a;--violet:#7c6ff7;--teal:#2dd4a0;--red:#e55;--green:#2dd46a;--ff:'Plus Jakarta Sans',sans-serif;--r:10px;--r2:16px}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);font-size:14px;line-height:1.6;overflow-x:hidden}
+
+/* ── AUTH OVERLAY ── */
+#auth-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(7,7,11,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center}
+#auth-overlay.open{display:flex}
+#auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:32px;width:360px}
+.auth-title{font-size:22px;font-weight:600;margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.auth-tab{display:flex;gap:4px;margin-bottom:22px;background:var(--bg3);border-radius:10px;padding:3px}
+.auth-tab-btn{flex:1;padding:8px;border:none;border-radius:8px;font-family:var(--ff);font-size:13px;font-weight:500;cursor:pointer;background:none;color:var(--muted);transition:all 0.2s}
+.auth-tab-btn.active{background:var(--bg2);color:var(--text)}
+.auth-field{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:11px 14px;font-family:var(--ff);font-size:13px;color:var(--text);outline:none;margin-bottom:12px;transition:border-color 0.2s}
+.auth-field:focus{border-color:var(--violet)}
+.auth-btn{width:100%;padding:12px;background:var(--gold);color:#1a1000;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.auth-btn:hover{background:var(--gold2)}
+.auth-err{color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px}
+.skip-auth{text-align:center;margin-top:14px;font-size:12px;color:var(--muted);cursor:pointer}
+.skip-auth:hover{color:var(--text)}
+
+/* ── NAV ── */
+#nav{position:sticky;top:0;z-index:500;background:rgba(7,7,11,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:58px;padding:0 28px;display:flex;align-items:center;gap:16px}
+.nav-logo{font-size:19px;font-weight:600;letter-spacing:2px;color:var(--text);cursor:pointer;flex-shrink:0;text-transform:uppercase}
+.nav-logo span{color:var(--gold)}
+.nav-search{flex:1;max-width:480px;margin:0 auto;background:var(--bg3);border:1px solid var(--border2);border-radius:100px;padding:0 14px;height:36px;display:flex;align-items:center;gap:8px;transition:border-color 0.2s}
+.nav-search:focus-within{border-color:var(--gold)}
+.nav-search input{flex:1;background:none;border:none;outline:none;font-family:var(--ff);font-size:13px;color:var(--text)}
+.nav-search input::placeholder{color:var(--muted)}
+.nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.nav-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:100px;border:1px solid var(--border2);background:none;font-family:var(--ff);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.nav-btn:hover{border-color:var(--border2);color:var(--text)}
+.nav-btn.gold{background:var(--gold);color:#1a1000;border-color:var(--gold);font-weight:600}
+.nav-btn.gold:hover{background:var(--gold2)}
+.nav-badge-count{background:var(--violet);color:#fff;border-radius:100px;min-width:17px;height:17px;padding:0 4px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.user-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;background:rgba(124,111,247,0.1);border:1px solid rgba(124,111,247,0.2);font-size:12px;color:var(--violet);cursor:pointer}
+
+/* ── CAT PILLS ── */
+#cats{display:flex;gap:6px;padding:16px 28px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border)}
+#cats::-webkit-scrollbar{display:none}
+.cat{padding:6px 16px;border-radius:100px;border:1px solid var(--border2);background:none;font-family:var(--ff);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.cat:hover{color:var(--text);border-color:var(--border2)}
+.cat.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+/* ── LAYOUT ── */
+#layout{display:grid;grid-template-columns:230px 1fr;max-width:1280px;margin:0 auto;padding:0 28px 80px;gap:32px}
+
+/* ── SIDEBAR ── */
+#sidebar{padding-top:24px;position:sticky;top:74px;height:fit-content}
+.sb-sec{margin-bottom:24px}
+.sb-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.sort-sel{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:9px 12px;font-family:var(--ff);font-size:12px;color:var(--text);outline:none;cursor:pointer;appearance:none}
+.price-disp{font-size:18px;font-weight:600;margin-bottom:8px;font-variant-numeric:tabular-nums}
+#prng{width:100%;accent-color:var(--gold);cursor:pointer;height:3px;appearance:none;background:var(--bg4);border-radius:2px;outline:none}
+#prng::-webkit-slider-thumb{appearance:none;width:15px;height:15px;background:var(--gold);border-radius:50%;cursor:pointer}
+.range-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+.br-row{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-bottom:1px solid var(--border);transition:opacity 0.15s}
+.br-row:last-child{border:none}
+.br-row:hover{opacity:0.7}
+.br-box{width:14px;height:14px;border:1px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.br-box.on{background:var(--gold);border-color:var(--gold)}
+.br-box.on::after{content:'';display:block;width:7px;height:4px;border-left:1.5px solid #1a1000;border-bottom:1.5px solid #1a1000;transform:rotate(-45deg) translateY(-1px)}
+.br-name{font-size:12px;color:var(--muted);flex:1}
+.br-count{font-size:11px;color:var(--text3)}
+.rating-opt{display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;font-size:12px;color:var(--muted);transition:color 0.15s}
+.rating-opt.on{color:var(--text);font-weight:500}
+.stars-sm{font-size:11px;color:#f4b942}
+.apply-btn{width:100%;padding:9px;background:var(--gold);color:#1a1000;border:none;border-radius:var(--r);font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;margin-top:4px}
+.ai-side{background:linear-gradient(135deg,rgba(124,111,247,0.1),rgba(45,212,160,0.06));border:1px solid rgba(124,111,247,0.15);border-radius:var(--r2);padding:14px}
+.ai-side-h{font-size:13px;font-weight:600;color:var(--violet);margin-bottom:5px}
+.ai-side-p{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.ai-side-btn{width:100%;padding:8px;background:rgba(124,111,247,0.1);border:1px solid rgba(124,111,247,0.2);border-radius:8px;color:var(--violet);font-size:12px;cursor:pointer;font-family:var(--ff);font-weight:500}
+
+/* ── CONTENT ── */
+#content{padding-top:24px}
+/* AI band */
+.ai-band{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:18px 20px;margin-bottom:24px;display:none}
+.ai-band-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ai-band-lbl{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--violet)}
+.ai-live{width:6px;height:6px;background:var(--violet);border-radius:50%;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.ai-variant{font-size:11px;color:var(--muted);background:var(--bg3);padding:3px 10px;border-radius:100px}
+.ai-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;padding-bottom:4px}
+.ai-rcard{flex-shrink:0;width:155px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all 0.2s}
+.ai-rcard:hover{border-color:rgba(124,111,247,0.3);transform:translateY(-2px)}
+.ar-img{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:34px;background:var(--bg4)}
+.ar-body{padding:9px}
+.ar-name{font-size:12px;font-weight:500;line-height:1.3;margin-bottom:2px}
+.ar-why{font-size:10px;color:var(--violet);line-height:1.4;margin-bottom:4px}
+.ar-price{font-size:14px;font-weight:700;color:var(--gold)}
+/* grid */
+.g-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.g-title{font-size:20px;font-weight:600;letter-spacing:-0.4px}
+.g-count{font-size:12px;color:var(--muted)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.pc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all 0.22s;display:flex;flex-direction:column}
+.pc:hover{border-color:var(--border2);transform:translateY(-2px);background:var(--bg3)}
+.pc-img{aspect-ratio:1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:52px;position:relative}
+.pc:hover .pc-img{background:var(--bg4)}
+.pb-badge{position:absolute;top:9px;left:9px;padding:3px 8px;border-radius:100px;font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
+.b-new{background:rgba(45,212,160,0.12);color:var(--teal);border:1px solid rgba(45,212,160,0.2)}
+.b-hot{background:rgba(212,168,67,0.1);color:var(--gold2);border:1px solid rgba(212,168,67,0.2)}
+.b-sale{background:rgba(232,85,85,0.1);color:#f09090;border:1px solid rgba(232,85,85,0.2)}
+.b-trend{background:rgba(124,111,247,0.1);color:var(--violet);border:1px solid rgba(124,111,247,0.2)}
+.pc-wish{position:absolute;top:9px;right:9px;width:26px;height:26px;background:var(--bg4);border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s}
+.pc-wish:hover,.pc-wish.on{background:rgba(232,85,85,0.15);border-color:rgba(232,85,85,0.3)}
+.pc-wish svg{width:11px;height:11px;stroke:var(--muted);fill:none;stroke-width:2;transition:all 0.2s}
+.pc-wish.on svg{stroke:var(--red);fill:var(--red)}
+.pc-body{padding:12px;flex:1;display:flex;flex-direction:column}
+.pc-cat{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.pc-name{font-size:13px;font-weight:500;line-height:1.4;margin-bottom:2px;flex:1}
+.pc-brand{font-size:11px;color:var(--muted);margin-bottom:10px}
+.pc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.pc-price{font-size:19px;font-weight:700;letter-spacing:-0.5px}
+.pc-old{font-size:10px;color:var(--muted);text-decoration:line-through}
+.pc-stars{font-size:10px;color:#f4b942;letter-spacing:-0.5px;margin-top:2px}
+.pc-rev{font-size:10px;color:var(--muted)}
+.add-btn{width:32px;height:32px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0}
+.add-btn:hover{background:var(--gold);border-color:var(--gold)}
+.add-btn:hover svg{stroke:#1a1000}
+.add-btn svg{width:13px;height:13px;stroke:var(--muted);stroke-width:2.5;fill:none}
+
+/* ── DETAIL OVERLAY ── */
+#ov{display:none;position:fixed;inset:0;z-index:800;background:rgba(7,7,11,0.85);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px}
+#ov.open{display:flex}
+#ov-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:24px;max-width:820px;width:100%;max-height:88vh;overflow-y:auto;animation:pop 0.28s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes pop{from{opacity:0;transform:scale(0.94) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.ov-close{display:flex;justify-content:flex-end;padding:18px 18px 0;position:sticky;top:0;z-index:2}
+.ov-x{width:32px;height:32px;background:var(--bg3);border:1px solid var(--border2);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ov-x svg{width:13px;height:13px;stroke:var(--muted);stroke-width:2;fill:none}
+.ov-body{display:grid;grid-template-columns:1fr 1fr;margin-top:-32px}
+.ov-left{padding:32px 24px 32px 32px}
+.ov-img{aspect-ratio:1;background:var(--bg3);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:88px}
+.ov-img-ai{width:100%;aspect-ratio:1;border-radius:var(--r2);object-fit:cover;display:none}
+.ov-thumbs{display:flex;gap:7px;margin-top:10px}
+.ov-thumb{width:48px;height:48px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px solid transparent;cursor:pointer;transition:border-color 0.2s}
+.ov-thumb.on{border-color:var(--gold)}
+.ov-right{padding:32px 32px 32px 0;overflow-y:auto}
+.ov-cat{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.ov-name{font-size:24px;font-weight:600;letter-spacing:-0.6px;margin-bottom:4px;line-height:1.15}
+.ov-brand{font-size:13px;color:var(--muted);margin-bottom:14px}
+.ov-stars-row{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.ov-stars{font-size:13px;color:#f4b942}
+.ov-rnum{font-size:13px;font-weight:600}
+.ov-rct{font-size:12px;color:var(--muted)}
+.ov-price{font-size:32px;font-weight:700;letter-spacing:-1px;margin-bottom:8px}
+.ov-desc{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:16px}
+.ov-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px}
+.ov-tag{padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:100px;font-size:11px;color:var(--muted)}
+.ov-acts{display:flex;gap:8px;margin-bottom:20px}
+.ov-cart-btn{flex:1;padding:12px;background:var(--gold);color:#1a1000;border:none;border-radius:100px;font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.ov-cart-btn:hover{background:var(--gold2)}
+.ov-wish-btn{padding:12px 18px;background:none;border:1px solid var(--border2);color:var(--text);border-radius:100px;font-family:var(--ff);font-size:13px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:5px}
+.ov-wish-btn:hover{border-color:var(--red)}
+.ai-insight{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:16px;position:relative;overflow:hidden;margin-bottom:18px}
+.ai-insight::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,var(--violet),var(--teal),var(--gold))}
+.ai-ilabel{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--violet);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.ai-ilabel svg{width:11px;height:11px;stroke:var(--violet);stroke-width:2;fill:none}
+.ai-itext{font-size:13px;color:var(--muted);line-height:1.8}
+.ai-loading{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.ai-spin{width:12px;height:12px;border:1.5px solid var(--border2);border-top-color:var(--violet);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* multi-modal image search */
+.ai-img-search{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.ai-img-search p{font-size:11px;color:var(--muted);margin-bottom:8px}
+#img-upload{display:none}
+.img-upload-btn{padding:7px 14px;background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.2);border-radius:8px;color:var(--teal);font-size:12px;cursor:pointer;font-family:var(--ff);font-weight:500}
+.sim-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.sim-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.sim-c{flex-shrink:0;width:100px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all 0.2s}
+.sim-c:hover{border-color:var(--border2);transform:translateY(-2px)}
+.sim-img{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:27px;background:var(--bg4)}
+.sim-info{padding:7px 8px}
+.sim-n{font-size:10px;font-weight:500;line-height:1.3;margin-bottom:2px}
+.sim-p{font-size:11px;font-weight:600;color:var(--gold)}
+
+/* ── CART DRAWER ── */
+#cart-bg{display:none;position:fixed;inset:0;z-index:700;background:rgba(7,7,11,0.6)}
+#cart-bg.on{display:block}
+#cart{position:fixed;top:0;right:0;bottom:0;width:380px;z-index:701;background:var(--bg2);border-left:1px solid var(--border2);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1)}
+#cart.on{transform:translateX(0)}
+.cart-top{padding:22px;border-bottom:1px solid var(--border)}
+.cart-tr{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.cart-h{font-size:20px;font-weight:600}
+.cart-xbtn{background:var(--bg3);border:1px solid var(--border2);width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cart-xbtn svg{width:12px;height:12px;stroke:var(--muted);stroke-width:2;fill:none}
+.cart-sub{font-size:12px;color:var(--muted)}
+.cart-items{flex:1;overflow-y:auto;padding:14px 22px}
+.cart-empty{text-align:center;padding:60px 0;color:var(--muted)}
+.ci{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--border)}
+.ci:last-child{border:none}
+.ci-img{width:58px;height:58px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.ci-info{flex:1}
+.ci-n{font-size:12px;font-weight:500;margin-bottom:2px;line-height:1.4}
+.ci-b{font-size:11px;color:var(--muted);margin-bottom:8px}
+.ci-row{display:flex;align-items:center;justify-content:space-between}
+.ci-p{font-size:15px;font-weight:700}
+.qrow{display:flex;align-items:center;gap:6px}
+.qbtn{width:22px;height:22px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:14px;color:var(--text);display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.qbtn:hover{background:var(--bg4);border-color:var(--border2)}
+.qnum{font-size:12px;font-weight:600;min-width:18px;text-align:center}
+.cart-foot{padding:18px 22px 28px;border-top:1px solid var(--border)}
+.cart-tot-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.ct-lbl{font-size:12px;color:var(--muted);font-weight:500}
+.ct-val{font-size:24px;font-weight:700;letter-spacing:-0.8px}
+.cart-save{font-size:11px;color:var(--teal);margin-bottom:16px}
+.checkout-btn{width:100%;padding:14px;background:var(--gold);color:#1a1000;border:none;border-radius:100px;font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.checkout-btn:hover{background:var(--gold2)}
+.checkout-btn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+
+/* ── AI STYLIST MODAL ── */
+#ai-modal{display:none;position:fixed;inset:0;z-index:900;background:rgba(7,7,11,0.8);backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:20px}
+#ai-modal.open{display:flex}
+#ai-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:22px;max-width:580px;width:100%;padding:30px;max-height:90vh;overflow-y:auto;animation:pop 0.28s cubic-bezier(0.34,1.56,0.64,1)}
+.ai-mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ai-mt{font-size:22px;font-weight:600;letter-spacing:-0.4px}
+.ai-mt span{color:var(--violet)}
+.aim-x{background:var(--bg3);border:1px solid var(--border2);width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.aim-x svg{width:13px;height:13px;stroke:var(--muted);stroke-width:2;fill:none}
+.ai-md{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7}
+.ex-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.ex-btn{padding:6px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:100px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--ff);transition:all 0.2s}
+.ex-btn:hover{border-color:var(--violet);color:var(--violet)}
+.ai-inp-row{display:flex;gap:8px;margin-bottom:14px}
+.ai-inp{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:12px 16px;font-family:var(--ff);font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s}
+.ai-inp:focus{border-color:var(--violet)}
+.ai-go{padding:12px 20px;background:var(--violet);color:#fff;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.ai-go:hover{background:var(--violet2,#a89ef8)}
+.ai-resp{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;font-size:13px;color:var(--muted);line-height:1.8;display:none;min-height:52px}
+.ai-resp-prods{display:flex;gap:9px;overflow-x:auto;margin-top:14px;padding-bottom:4px;display:none}
+.arp{flex-shrink:0;width:125px;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all 0.2s}
+.arp:hover{border-color:var(--border2);transform:translateY(-2px)}
+.arp-img{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--bg3)}
+.arp-info{padding:8px}
+.arp-n{font-size:11px;font-weight:500;line-height:1.3;margin-bottom:3px}
+.arp-p{font-size:12px;font-weight:700;color:var(--gold)}
+
+/* ── TOASTS ── */
+#toasts{position:fixed;bottom:26px;right:26px;z-index:2000;display:flex;flex-direction:column;gap:7px;align-items:flex-end}
+.toast{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 16px;border-radius:100px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;animation:toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.toast.out{animation:toastOut 0.22s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px) scale(0.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px) scale(0.95)}}
+
+@media(max-width:900px){
+  #layout{grid-template-columns:1fr;padding:0 16px 60px}
+  #sidebar{display:none}
+  .ov-body{grid-template-columns:1fr}
+  .ov-right{padding:16px 24px 24px}
+  #cart{width:100%}
+  #nav{padding:0 16px}
+  #cats{padding:12px 16px}
+}
+
+.auth-google-btn{width:100%;padding:11px;background:#fff;color:#1a1000;border:1.5px solid #ddd;border-radius:var(--r2);font-family:var(--ff);font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;transition:all 0.2s}
+.auth-google-btn:hover{border-color:#aaa;background:#f9f9f9}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--muted);font-size:12px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border2)}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-overlay">
+  <div id="auth-box">
+    <div class="auth-title">Welcome to NEXUS</div>
+    <div class="auth-sub">Sign in to save your wishlist, cart, and get personalised recommendations</div>
+    <div class="auth-tab">
+      <button class="auth-tab-btn active" id="tab-in" onclick="switchTab('in')">Sign In</button>
+      <button class="auth-tab-btn" id="tab-up" onclick="switchTab('up')">Sign Up</button>
+    </div>
+    <div class="auth-err" id="auth-err"></div>
+    <button class="auth-google-btn" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.5 6.7 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.5 6.7 29.5 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.7-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.3 4.1-4.2 5.4l6.2 5.2C37 36.9 44 31 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-divider"><span>or</span></div>
+    <input class="auth-field" id="auth-email" type="email" placeholder="Email address">
+    <input class="auth-field" id="auth-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doAuth()">
+    <button class="auth-btn" onclick="doAuth()">Continue</button>
+    <div class="skip-auth" onclick="skipAuth()">Continue without account →</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo" onclick="scrollTo(0,0)">NEX<span>US</span></div>
+  <div class="nav-search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="search-inp" type="text" placeholder="Search products..." oninput="handleSearch(this.value)">
+  </div>
+  <div class="nav-right">
+    <div id="user-chip" class="user-chip" style="display:none" onclick="signOutUser()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="user-email-short"></span>
+    </div>
+    <button class="nav-btn" onclick="openAI()">✦ AI Stylist</button>
+    <button class="nav-btn gold" onclick="openCart()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      Cart <span class="nav-badge-count" id="cart-cnt">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- CATEGORIES -->
+<div id="cats">
+  <button class="cat on" onclick="setCat('all',this)">All</button>
+  <button class="cat" onclick="setCat('electronics',this)">Electronics</button>
+  <button class="cat" onclick="setCat('fashion',this)">Fashion</button>
+  <button class="cat" onclick="setCat('home',this)">Home & Living</button>
+  <button class="cat" onclick="setCat('sports',this)">Sports</button>
+  <button class="cat" onclick="setCat('beauty',this)">Beauty</button>
+  <button class="cat" onclick="setCat('books',this)">Books</button>
+  <button class="cat" onclick="setCat('food',this)">Food</button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="layout">
+  <aside id="sidebar">
+    <div class="sb-sec">
+      <div class="sb-label">Sort</div>
+      <select class="sort-sel" onchange="setSort(this.value)">
+        <option value="default">Featured</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="rating">Top Rated</option>
+        <option value="new">Newest</option>
+      </select>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-label">Max Price</div>
+      <div class="price-disp" id="price-disp">Up to ₹1,000</div>
+      <input type="range" id="prng" min="0" max="1000" value="1000" step="10" oninput="setPrice(this.value)">
+      <div class="range-row"><span>₹0</span><span>₹1,000</span></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-label">Rating</div>
+      <div class="rating-opt on" onclick="setRating(0,this)"><span class="stars-sm">★★★★★</span>&nbsp;Any</div>
+      <div class="rating-opt" onclick="setRating(4,this)"><span class="stars-sm">★★★★</span>&nbsp;4+ stars</div>
+      <div class="rating-opt" onclick="setRating(4.5,this)"><span class="stars-sm">★★★★½</span>&nbsp;4.5+</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-label">Brand</div>
+      <div id="brand-list"></div>
+    </div>
+    <button class="apply-btn" onclick="renderGrid()">Apply</button>
+    <br><br>
+    <div class="ai-side">
+      <div class="ai-side-h">✦ AI Stylist</div>
+      <div class="ai-side-p">Describe what you need — I'll find the perfect products.</div>
+      <button class="ai-side-btn" onclick="openAI()">Open AI Stylist →</button>
+    </div>
+  </aside>
+
+  <div id="content">
+    <!-- AI BAND -->
+    <div class="ai-band" id="ai-band">
+      <div class="ai-band-head">
+        <div class="ai-band-lbl"><span class="ai-live"></span>AI picks for you</div>
+        <span class="ai-variant" id="ai-variant-badge">Loading...</span>
+      </div>
+      <div class="ai-strip" id="ai-strip"></div>
+    </div>
+    <!-- GRID -->
+    <div class="g-head">
+      <div>
+        <div class="g-title" id="g-title">All products</div>
+        <div class="g-count" id="g-count"></div>
+      </div>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+    <div id="empty" style="display:none;text-align:center;padding:80px 0;color:var(--muted)">
+      <p style="font-size:18px;color:var(--text);margin-bottom:6px">No products found</p>
+      <p>Try different filters</p>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div id="ov" onclick="if(event.target===this)closeOv()">
+  <div id="ov-panel">
+    <div class="ov-close"><button class="ov-x" onclick="closeOv()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="ov-body">
+      <div class="ov-left">
+        <div class="ov-img" id="ov-img"></div>
+        <img class="ov-img-ai" id="ov-img-ai" alt="">
+        <div class="ov-thumbs" id="ov-thumbs"></div>
+      </div>
+      <div class="ov-right">
+        <div class="ov-cat" id="ov-cat"></div>
+        <div class="ov-name" id="ov-name"></div>
+        <div class="ov-brand" id="ov-brand"></div>
+        <div class="ov-stars-row">
+          <span class="ov-stars" id="ov-stars"></span>
+          <span class="ov-rnum" id="ov-rnum"></span>
+          <span class="ov-rct" id="ov-rct"></span>
+        </div>
+        <div class="ov-price" id="ov-price"></div>
+        <div class="ov-desc" id="ov-desc"></div>
+        <div class="ov-tags" id="ov-tags"></div>
+        <div class="ov-acts">
+          <button class="ov-cart-btn" id="ov-cart-btn">Add to cart</button>
+          <button class="ov-wish-btn" id="ov-wish-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Wishlist</button>
+        </div>
+        <div class="ai-insight">
+          <div class="ai-ilabel"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>AI Insight</div>
+          <div class="ai-itext" id="ov-ai"></div>
+          <!-- MULTI-MODAL: image upload for visual similarity -->
+          <div class="ai-img-search">
+            <p>🖼️ Find visually similar products</p>
+            <input type="file" id="img-upload" accept="image/*" onchange="analyseImage(this)">
+            <label for="img-upload" class="img-upload-btn">Upload image →</label>
+          </div>
+        </div>
+        <div class="sim-title">Similar products</div>
+        <div class="sim-row" id="ov-sim"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CART -->
+<div id="cart-bg" onclick="closeCart()"></div>
+<div id="cart">
+  <div class="cart-top">
+    <div class="cart-tr"><div class="cart-h">Your cart</div><button class="cart-xbtn" onclick="closeCart()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="cart-sub" id="cart-sub">0 items</div>
+  </div>
+  <div class="cart-items" id="cart-items-el"></div>
+  <div class="cart-foot">
+    <div class="cart-tot-row"><span class="ct-lbl">Total</span><span class="ct-val" id="cart-tot">₹0</span></div>
+    <div class="cart-save" id="cart-save"></div>
+    <button class="checkout-btn" onclick="doCheckout()">Checkout <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+  </div>
+</div>
+
+<!-- AI MODAL -->
+<div id="ai-modal" onclick="if(event.target===this)closeAI()">
+  <div id="ai-panel">
+    <div class="ai-mh"><div class="ai-mt">NEXUS <span>AI</span> Stylist</div><button class="aim-x" onclick="closeAI()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <p class="ai-md">Describe exactly what you need — occasion, budget, who it's for — and I'll find the perfect products.</p>
+    <div class="ex-wrap">
+      <button class="ex-btn" onclick="preAI(this.textContent)">Home office under ₹500</button>
+      <button class="ex-btn" onclick="preAI(this.textContent)">Gift for a runner</button>
+      <button class="ex-btn" onclick="preAI(this.textContent)">Skincare beginner kit</button>
+      <button class="ex-btn" onclick="preAI(this.textContent)">Tech gift under ₹300</button>
+      <button class="ex-btn" onclick="preAI(this.textContent)">Books for productivity</button>
+    </div>
+    <div class="ai-inp-row">
+      <input class="ai-inp" id="ai-inp" type="text" placeholder="What are you looking for?" onkeydown="if(event.key==='Enter')runAI()">
+      <button class="ai-go" onclick="runAI()">Find →</button>
+    </div>
+    <div class="ai-resp" id="ai-resp"></div>
+    <div class="ai-resp-prods" id="ai-resp-prods"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<!-- Supabase UMD — no type=module needed, works with onclick attributes -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// ── PASTE YOUR CREDENTIALS HERE ──────────────────────────
+var SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
+var SUPABASE_ANON = 'YOUR_ANON_KEY';
+// ─────────────────────────────────────────────────────────
+
+var db    = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+var CLAUDE = 'https://api.anthropic.com/v1/messages';
+var MODEL  = 'claude-sonnet-4-20250514';
+
+var PRODS=[
+  {id:'p001',name:'Sony WH-1000XM5',brand:'Sony',cat:'electronics',price:299,rating:4.8,reviews:2840,emoji:'🎧',badge:'hot',desc:'Industry-leading noise canceling. 30-hour battery. Auto NC Optimizer adjusts for environment.',tags:['audio','wireless','noise-cancel'],stock:true,old:349},
+  {id:'p002',name:'Apple AirPods Pro 2nd Gen',brand:'Apple',cat:'electronics',price:249,rating:4.7,reviews:5120,emoji:'🎵',badge:'hot',desc:'ANC twice as powerful. Adaptive Audio. 30 hours total battery. H2 chip spatial audio.',tags:['audio','wireless','apple'],stock:true},
+  {id:'p003',name:'MacBook Air M3',brand:'Apple',cat:'electronics',price:1099,rating:4.9,reviews:2200,emoji:'💻',badge:'new',desc:'M3 chip. 18-hour battery. Fanless, completely silent. 13.6 inch Liquid Retina. MagSafe 3.',tags:['laptop','apple','productivity'],stock:true},
+  {id:'p004',name:'Dell 27 inch 4K USB-C Monitor',brand:'Dell',cat:'electronics',price:449,rating:4.6,reviews:2100,emoji:'🖥️',badge:null,desc:'3840x2160 IPS. 99% sRGB. USB-C 90W charging. Height and tilt adjustable.',tags:['monitor','4k','desk'],stock:true},
+  {id:'p005',name:'Logitech MX Master 3S',brand:'Logitech',cat:'electronics',price:99,rating:4.7,reviews:6700,emoji:'🖱️',badge:null,desc:'8K DPI. MagSpeed scroll. Quiet clicks. Multi-device. Works on glass.',tags:['mouse','productivity','desk'],stock:true},
+  {id:'p006',name:'iPad Air M2',brand:'Apple',cat:'electronics',price:599,rating:4.7,reviews:3400,emoji:'📱',badge:'new',desc:'M2 chip. 10.9 inch Liquid Retina. 5G. Apple Pencil Pro support.',tags:['tablet','apple','creative'],stock:true},
+  {id:'p007',name:'Canon EOS R50',brand:'Canon',cat:'electronics',price:749,rating:4.5,reviews:870,emoji:'📷',badge:null,desc:'24.2MP APS-C. Dual Pixel CMOS AF II. 4K video. Compact mirrorless for creators.',tags:['camera','photo','creator'],stock:true},
+  {id:'p008',name:'Kindle Paperwhite',brand:'Amazon',cat:'electronics',price:139,rating:4.6,reviews:18000,emoji:'📚',badge:null,desc:'6.8 inch 300 PPI. Adjustable warm light. IPX8 waterproof. 10-week battery. 16GB.',tags:['reading','ereader','waterproof'],stock:true},
+  {id:'p009',name:'Nike Air Max 270',brand:'Nike',cat:'fashion',price:129,rating:4.4,reviews:6780,emoji:'👟',badge:null,desc:'270 degrees of Air underfoot. Breathable mesh upper. Foam midsole.',tags:['shoes','athletic','comfort'],stock:true,old:149},
+  {id:'p010',name:"Levi's 501 Original Jeans",brand:"Levi's",cat:'fashion',price:69,rating:4.5,reviews:9200,emoji:'👖',badge:null,desc:'The original jean. Straight leg, button fly, 100% cotton.',tags:['denim','classic','casual'],stock:true},
+  {id:'p011',name:'Ray-Ban Aviator Classic',brand:'Ray-Ban',cat:'fashion',price:159,rating:4.7,reviews:4500,emoji:'🕶️',badge:null,desc:'Gold metal frame, green G-15 lens. UV400. Teardrop shape.',tags:['eyewear','classic'],stock:true},
+  {id:'p012',name:'Casio G-Shock GA-2100',brand:'Casio',cat:'fashion',price:99,rating:4.6,reviews:8900,emoji:'⌚',badge:null,desc:'Shock resistant. 200M water resistant. Carbon Core Guard.',tags:['watch','sports','durable'],stock:true},
+  {id:'p013',name:'Uniqlo Ultra-Light Down',brand:'Uniqlo',cat:'fashion',price:79,rating:4.5,reviews:14000,emoji:'🧣',badge:null,desc:'800-fill power down. Weighs 200g. Packs into its own pocket.',tags:['outerwear','travel','lightweight'],stock:true,old:99},
+  {id:'p014',name:'Dyson V15 Detect',brand:'Dyson',cat:'home',price:649,rating:4.8,reviews:2100,emoji:'🧹',badge:'hot',desc:'Laser reveals dust. Adapts suction. HEPA. 60-min runtime.',tags:['cleaning','smart','vacuum'],stock:true},
+  {id:'p015',name:'Instant Pot Duo 7-in-1',brand:'Instant Pot',cat:'home',price:99,rating:4.7,reviews:12000,emoji:'🍲',badge:null,desc:'7 appliances in 1. 6-quart. 14 smart programs.',tags:['kitchen','cooking'],stock:true},
+  {id:'p016',name:'Philips Hue Starter Kit',brand:'Philips',cat:'home',price:149,rating:4.5,reviews:5600,emoji:'💡',badge:null,desc:'3 colour bulbs + Bridge. 16M colours. Works with Alexa, Google, HomeKit.',tags:['smart-home','lighting'],stock:true},
+  {id:'p017',name:'Bose SoundLink Revolve+',brand:'Bose',cat:'home',price:299,rating:4.6,reviews:2300,emoji:'🔊',badge:null,desc:'360-degree sound. 17-hour battery. IPX4. Built-in speakerphone.',tags:['speaker','portable'],stock:true},
+  {id:'p018',name:'Adidas Ultraboost 23',brand:'Adidas',cat:'sports',price:179,rating:4.6,reviews:4300,emoji:'🏃',badge:null,desc:'BOOST midsole returns energy every step. Primeknit+ upper adapts to foot.',tags:['running','performance'],stock:true},
+  {id:'p019',name:'Garmin Forerunner 265',brand:'Garmin',cat:'sports',price:449,rating:4.7,reviews:1870,emoji:'⌚',badge:'new',desc:'AMOLED. Training readiness. Morning report. HRV. 15-day battery.',tags:['gps','running','fitness'],stock:true},
+  {id:'p020',name:'Lululemon Align Leggings',brand:'Lululemon',cat:'sports',price:98,rating:4.8,reviews:7800,emoji:'🩳',badge:null,desc:'Buttery-soft Nulu. Barely-there feel. High-rise. 4-way stretch.',tags:['yoga','activewear'],stock:true},
+  {id:'p021',name:'Hydro Flask 32oz',brand:'Hydro Flask',cat:'sports',price:44,rating:4.8,reviews:14000,emoji:'🥤',badge:null,desc:'Cold 24hr, hot 12hr. Double wall. BPA-free. Lifetime warranty.',tags:['hydration','outdoor','eco'],stock:true},
+  {id:'p022',name:'Theragun Prime',brand:'Therabody',cat:'sports',price:299,rating:4.6,reviews:3400,emoji:'💪',badge:null,desc:'Quiet Force Technology. 4 attachments. 2400 PPM. 120-min battery.',tags:['recovery','massage'],stock:true},
+  {id:'p023',name:'Liforme Yoga Mat',brand:'Liforme',cat:'sports',price:149,rating:4.8,reviews:5600,emoji:'🧘',badge:null,desc:'Natural rubber. Alignment markers. 6mm. GripForMe non-slip.',tags:['yoga','eco'],stock:true},
+  {id:'p024',name:'The Ordinary Niacinamide',brand:'The Ordinary',cat:'beauty',price:19,rating:4.6,reviews:25000,emoji:'🧴',badge:'hot',desc:'10% Niacinamide + 1% Zinc. Reduces pores, blemishes, sebum. Vegan.',tags:['skincare','serum'],stock:true},
+  {id:'p025',name:"Fenty Beauty Pro Filt'r",brand:'Fenty Beauty',cat:'beauty',price:38,rating:4.5,reviews:9800,emoji:'💄',badge:null,desc:'50 shades. Soft matte. SPF 15. Lightweight longwear.',tags:['foundation','makeup'],stock:true},
+  {id:'p026',name:'Olaplex No. 3',brand:'Olaplex',cat:'beauty',price:29,rating:4.7,reviews:18000,emoji:'💆',badge:null,desc:'Bond-building treatment. Reduces breakage. Use weekly.',tags:['haircare','repair'],stock:true},
+  {id:'p027',name:'Dyson Airwrap Complete',brand:'Dyson',cat:'beauty',price:549,rating:4.6,reviews:4500,emoji:'💇',badge:null,desc:'Coanda effect. No extreme heat. Curls, waves, smooths, dries.',tags:['styling','hair'],stock:true,old:599},
+  {id:'p028',name:'Atomic Habits',brand:'James Clear',cat:'books',price:14,rating:4.9,reviews:45000,emoji:'📙',badge:'hot',desc:'Tiny Changes, Remarkable Results. #1 NYT bestseller.',tags:['self-help','habits'],stock:true},
+  {id:'p029',name:'The Psychology of Money',brand:'Morgan Housel',cat:'books',price:12,rating:4.7,reviews:28000,emoji:'📘',badge:null,desc:'Timeless lessons on wealth, greed, and happiness.',tags:['finance','investing'],stock:true},
+  {id:'p030',name:'Deep Work',brand:'Cal Newport',cat:'books',price:13,rating:4.6,reviews:19000,emoji:'📕',badge:null,desc:'Focused success in a distracted world.',tags:['productivity','focus'],stock:true},
+  {id:'p031',name:'Designing Data-Intensive Apps',brand:'Martin Kleppmann',cat:'books',price:49,rating:4.9,reviews:8000,emoji:'📗',badge:'trend',desc:'The definitive guide to reliable, scalable systems.',tags:['technical','data','engineering'],stock:true},
+  {id:'p032',name:'Nespresso Vertuo Next',brand:'Nespresso',cat:'food',price:179,rating:4.5,reviews:6700,emoji:'☕',badge:null,desc:'Centrifusion. 5 cup sizes. 30-sec heat-up. WiFi connected.',tags:['coffee','kitchen','smart'],stock:true},
+  {id:'p033',name:'RXBAR Protein Bars 12pk',brand:'RXBAR',cat:'food',price:29,rating:4.4,reviews:12000,emoji:'🍫',badge:null,desc:'12g protein. No added sugar, gluten, or soy.',tags:['protein','snack','clean'],stock:true},
+  {id:'p034',name:'Ember Smart Mug 2',brand:'Ember',cat:'food',price:149,rating:4.5,reviews:8400,emoji:'🍵',badge:'new',desc:'Keeps coffee at exact temp for 80 minutes. App-controlled.',tags:['coffee','smart','desk'],stock:true},
+  {id:'p035',name:'Samsung 65 inch Neo QLED',brand:'Samsung',cat:'electronics',price:899,rating:4.6,reviews:1230,emoji:'📺',badge:null,desc:'Quantum Matrix. Neo Slim. Dolby Atmos. AI Picture Quality.',tags:['tv','4k','smart-home'],stock:true},
+];
+
+// ── STATE ─────────────────────────────────────────────────
+var S={cat:'all',search:'',maxPrice:1000,minRating:0,sort:'default',brands:new Set(),cart:[],wish:new Set(),viewed:[],cur:null,user:null,profile:null,abVariant:'control'};
+
+// ── SESSION ───────────────────────────────────────────────
+function sid(){if(!sessionStorage.nexus_sid)sessionStorage.nexus_sid=crypto.randomUUID();return sessionStorage.nexus_sid}
+
+// ── AUTH ──────────────────────────────────────────────────
+function switchTab(tab){
+  ['in','up'].forEach(function(t){document.getElementById('tab-'+t).classList.toggle('active',t===tab)});
+}
+
+async function doAuth(){
+  var email=document.getElementById('auth-email').value.trim();
+  var pass=document.getElementById('auth-pass').value;
+  var errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  if(!email||!pass){errEl.textContent='Please enter email and password';return}
+  var isUp=document.getElementById('tab-up').classList.contains('active');
+  try{
+    var result=isUp
+      ? await db.auth.signUp({email:email,password:pass})
+      : await db.auth.signInWithPassword({email:email,password:pass});
+    if(result.error)throw result.error;
+    if(isUp && !result.data.session){
+      errEl.style.color='#2dd4a0';
+      errEl.textContent='Check your email to confirm your account, then sign in.';
+      return;
+    }
+    S.user=result.data.user||result.data.session?.user||null;
+    afterAuth();
+  }catch(e){errEl.textContent=e.message||'Authentication failed'}
+}
+
+function skipAuth(){afterAuth()}
+
+async function afterAuth(){
+  document.getElementById('auth-overlay').classList.remove('open');
+  if(S.user){
+    document.getElementById('user-chip').style.display='flex';
+    document.getElementById('user-email-short').textContent=S.user.email.split('@')[0];
+    try{
+      var pr=await db.from('user_profiles').select('*').eq('user_id',S.user.id).single();
+      S.profile=pr.data;
+      S.abVariant=(pr.data&&pr.data.ab_variant)||'control';
+    }catch(e){}
+    // Load wishlist
+    try{
+      var wl=await db.from('wishlists').select('product_id').eq('user_id',S.user.id);
+      if(wl.data)wl.data.forEach(function(r){S.wish.add(r.product_id)});
+    }catch(e){}
+    // Load cart
+    try{
+      var cartDB=await db.from('carts').select('product_id,qty').eq('user_id',S.user.id);
+      if(cartDB.data)cartDB.data.forEach(function(r){S.cart.push({id:r.product_id,qty:r.qty})});
+    }catch(e){}
+    updateCartUI();
+    renderGrid();
+  }
+}
+
+async function signOutUser(){await db.auth.signOut();location.reload()}
+
+// ── TRACK ─────────────────────────────────────────────────
+async function track(productId,eventType,meta){
+  try{
+    var row={session_id:sid(),event_type:eventType,ab_variant:S.abVariant,metadata:meta||{}};
+    if(productId)row.product_id=productId;
+    if(S.user)row.user_id=S.user.id;
+    await db.from('user_events').insert(row);
+  }catch(e){}
+}
+
+// ── FILTERS ───────────────────────────────────────────────
+function filtered(){
+  var a=PRODS.slice();
+  if(S.cat!=='all')a=a.filter(function(p){return p.cat===S.cat});
+  if(S.search){var q=S.search.toLowerCase();a=a.filter(function(p){return p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)||p.tags.some(function(t){return t.includes(q)})})}
+  a=a.filter(function(p){return p.price<=S.maxPrice&&p.rating>=S.minRating});
+  if(S.brands.size)a=a.filter(function(p){return S.brands.has(p.brand)});
+  if(S.sort==='price-asc')a.sort(function(x,y){return x.price-y.price});
+  else if(S.sort==='price-desc')a.sort(function(x,y){return y.price-x.price});
+  else if(S.sort==='rating')a.sort(function(x,y){return y.rating-x.rating});
+  else if(S.sort==='new'){var nw=a.filter(function(p){return p.badge==='new'});var rest=a.filter(function(p){return p.badge!=='new'});a=nw.concat(rest);}
+  return a;
+}
+
+function renderGrid(){
+  var items=filtered();
+  var g=document.getElementById('pgrid'),em=document.getElementById('empty');
+  document.getElementById('g-count').textContent=items.length+' products';
+  if(!items.length){g.innerHTML='';em.style.display='block';return}
+  em.style.display='none';
+  g.innerHTML=items.map(function(p){
+    var stars='★'.repeat(Math.floor(p.rating))+'☆'.repeat(5-Math.floor(p.rating));
+    var wished=S.wish.has(p.id);
+    return '<div class="pc" onclick="openDetail(\''+p.id+'\')">'
+      +'<div class="pc-img">'
+      +(p.badge?'<span class="pb-badge b-'+p.badge+'">'+p.badge.toUpperCase()+'</span>':'')
+      +'<span style="font-size:52px">'+p.emoji+'</span>'
+      +'<button class="pc-wish'+(wished?' on':'')+'" onclick="toggleWish(event,\''+p.id+'\')">'
+      +'<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"'+(wished?' fill="var(--red)"':'')+'/></svg>'
+      +'</button></div>'
+      +'<div class="pc-body">'
+      +'<div class="pc-cat">'+p.cat+'</div>'
+      +'<div class="pc-name">'+p.name+'</div>'
+      +'<div class="pc-brand">'+p.brand+'</div>'
+      +'<div class="pc-foot"><div>'
+      +'<div class="pc-price">₹'+p.price+(p.old?'<span class="pc-old"> ₹'+p.old+'</span>':'')+'</div>'
+      +'<div class="pc-stars">'+stars+'&nbsp;<span class="pc-rev">'+p.rating+' ('+(p.reviews/1000).toFixed(1)+'k)</span></div>'
+      +'</div>'
+      +'<button class="add-btn" onclick="addCart(event,\''+p.id+'\')">'
+      +'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+      +'</button></div></div></div>';
+  }).join('');
+}
+
+function buildBrands(){
+  var brands=[...new Set(PRODS.map(function(p){return p.brand}))].sort();
+  document.getElementById('brand-list').innerHTML=brands.map(function(b){
+    var c=PRODS.filter(function(p){return p.brand===b}).length;
+    return '<div class="br-row" onclick="toggleBrand(\''+b+'\',this)"><div class="br-box'+(S.brands.has(b)?' on':'')+'"></div><span class="br-name">'+b+'</span><span class="br-count">'+c+'</span></div>';
+  }).join('');
+}
+
+function toggleBrand(b,el){
+  if(S.brands.has(b))S.brands.delete(b);else S.brands.add(b);
+  el.querySelector('.br-box').classList.toggle('on',S.brands.has(b));
+  renderGrid();
+}
+function setCat(c,el){
+  S.cat=c;
+  document.querySelectorAll('.cat').forEach(function(x){x.classList.remove('on')});
+  el.classList.add('on');
+  document.getElementById('g-title').textContent=c==='all'?'All products':c.charAt(0).toUpperCase()+c.slice(1);
+  renderGrid();
+}
+function handleSearch(v){S.search=v;track(null,'search',{query:v});renderGrid()}
+function setPrice(v){S.maxPrice=parseInt(v);document.getElementById('price-disp').textContent='Up to ₹'+v;renderGrid()}
+function setSort(v){S.sort=v;renderGrid()}
+function setRating(v,el){S.minRating=v;document.querySelectorAll('.rating-opt').forEach(function(x){x.classList.remove('on')});el.classList.add('on');renderGrid()}
+
+// ── DETAIL ────────────────────────────────────────────────
+async function openDetail(id){
+  var p=PRODS.find(function(x){return x.id===id});if(!p)return;
+  S.cur=p;
+  if(!S.viewed.includes(id)){S.viewed.push(id);track(id,'view');}
+  var dwellTimer=setTimeout(function(){track(id,'dwell_30s')},30000);
+  document.getElementById('ov').dataset.dwellTimer=dwellTimer;
+  document.getElementById('ov-img').textContent=p.emoji;
+  document.getElementById('ov-img-ai').style.display='none';
+  document.getElementById('ov-img').style.display='flex';
+  document.getElementById('ov-cat').textContent=p.cat.toUpperCase();
+  document.getElementById('ov-name').textContent=p.name;
+  document.getElementById('ov-brand').textContent='by '+p.brand;
+  document.getElementById('ov-stars').textContent='★'.repeat(Math.floor(p.rating))+'☆'.repeat(5-Math.floor(p.rating));
+  document.getElementById('ov-rnum').textContent=p.rating;
+  document.getElementById('ov-rct').textContent='· '+p.reviews.toLocaleString()+' reviews';
+  document.getElementById('ov-price').textContent='₹'+p.price;
+  document.getElementById('ov-desc').textContent=p.desc;
+  document.getElementById('ov-tags').innerHTML=p.tags.map(function(t){return '<span class="ov-tag">'+t+'</span>'}).join('');
+  document.getElementById('ov-thumbs').innerHTML=[p.emoji,'📦','🏷️'].map(function(e,i){return '<div class="ov-thumb'+(i===0?' on':'')+'">'+e+'</div>'}).join('');
+  var sim=PRODS.filter(function(x){return x.id!==p.id&&(x.cat===p.cat||x.tags.some(function(t){return p.tags.includes(t)}))}).sort(function(){return Math.random()-0.5}).slice(0,8);
+  document.getElementById('ov-sim').innerHTML=sim.map(function(s){return '<div class="sim-c" onclick="openDetail(\''+s.id+'\')"><div class="sim-img">'+s.emoji+'</div><div class="sim-info"><div class="sim-n">'+s.name+'</div><div class="sim-p">₹'+s.price+'</div></div></div>'}).join('');
+  document.getElementById('ov-cart-btn').onclick=function(){addCartById(p.id);closeOv()};
+  document.getElementById('ov-wish-btn').onclick=function(){toggleWish(null,p.id)};
+  document.getElementById('ov').classList.add('open');
+  document.body.style.overflow='hidden';
+  loadInsight(p);
+  if(S.viewed.length>=2)loadAIBand();
+}
+
+function closeOv(){
+  clearTimeout(parseInt(document.getElementById('ov').dataset.dwellTimer)||0);
+  document.getElementById('ov').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ── AI INSIGHT ────────────────────────────────────────────
+async function loadInsight(p){
+  var box=document.getElementById('ov-ai');
+  box.innerHTML='<div class="ai-loading"><div class="ai-spin"></div>Generating insight...</div>';
+  try{
+    var r=await fetch(CLAUDE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:MODEL,max_tokens:800,stream:true,
+      system:'Write 3 sentences: (1) honest differentiating value vs competitors (2) who it best suits (3) one insider tip. Plain text, no markdown.',
+      messages:[{role:'user',content:p.name+' by '+p.brand+'. Rs.'+p.price+'. '+p.desc+'. Tags: '+p.tags.join(', ')+'.'}]
+    })});
+    box.innerHTML='';
+    var rd=r.body.getReader(),dc=new TextDecoder(),buf='';
+    while(true){
+      var chunk=await rd.read();
+      if(chunk.done)break;
+      buf+=dc.decode(chunk.value,{stream:true});
+      var ln=buf.split('\n');buf=ln.pop();
+      for(var i=0;i<ln.length;i++){
+        if(!ln[i].startsWith('data: '))continue;
+        try{var j=JSON.parse(ln[i].slice(6));if(j.delta&&j.delta.text)box.textContent+=j.delta.text}catch(e){}
+      }
+    }
+  }catch(e){box.textContent=p.name+' earns its '+p.rating+'-star rating. Best for those seeking quality in the '+p.cat+' category. Pro tip: read the 3-star reviews for the most balanced perspective.'}
+}
+
+// ── IMAGE ANALYSIS ────────────────────────────────────────
+async function analyseImage(input){
+  var file=input.files[0];if(!file)return;
+  var box=document.getElementById('ov-ai');
+  box.innerHTML='<div class="ai-loading"><div class="ai-spin"></div>Analysing image...</div>';
+  var b64=await new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result.split(',')[1])};r.onerror=rej;r.readAsDataURL(file)});
+  var imgEl=document.getElementById('ov-img-ai');
+  imgEl.src=URL.createObjectURL(file);imgEl.style.display='block';
+  document.getElementById('ov-img').style.display='none';
+  try{
+    var r=await fetch(CLAUDE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:MODEL,max_tokens:600,
+      system:'Identify the product in the image and find similar items from: '+PRODS.map(function(p){return 'ID:'+p.id+' '+p.name+' by '+p.brand+' Rs.'+p.price+' '+p.cat}).join(' | ')+'. Write 2 sentences about the image, then PRODUCTS: id1,id2,id3',
+      messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Identify and find similar products.'}]}]
+    })});
+    var data=await r.json();
+    var txt=(data.content&&data.content[0]&&data.content[0].text)||'';
+    var m=txt.match(/PRODUCTS:\s*([\w,\s]+)/);
+    box.textContent=txt.replace(/PRODUCTS:.*/,'').trim();
+    if(m){var ids=m[1].split(',').map(function(s){return s.trim()}).filter(Boolean);var found=ids.map(function(id){return PRODS.find(function(p){return p.id===id})}).filter(Boolean);if(found.length){document.getElementById('ov-sim').innerHTML=found.map(function(s){return '<div class="sim-c" onclick="openDetail(\''+s.id+'\')"><div class="sim-img">'+s.emoji+'</div><div class="sim-info"><div class="sim-n">'+s.name+'</div><div class="sim-p">₹'+s.price+'</div></div></div>'}).join('')}}
+  }catch(e){box.textContent='Could not analyse image. Please try a clearer product photo.'}
+}
+
+// ── AI BAND ───────────────────────────────────────────────
+async function loadAIBand(){
+  var band=document.getElementById('ai-band');
+  var strip=document.getElementById('ai-strip')||document.getElementById('ai-band-strip');
+  if(!band||!strip)return;
+  band.style.display='block';
+  strip.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:16px 0;color:var(--muted);font-size:12px"><div class="ai-spin"></div>Personalising picks...</div>';
+  var badge=document.getElementById('ai-variant-badge');
+  if(badge)badge.textContent='Strategy: '+(S.abVariant==='treatment'?'Claude AI':'Collaborative Filtering');
+  var viewed=S.viewed.slice(-5).map(function(id){return PRODS.find(function(p){return p.id===id})}).filter(Boolean);
+  var recs=[];
+  if(S.abVariant==='treatment'){
+    var prompt='User profile: '+(S.profile?'prefers '+(S.profile.preferred_categories||[]).join(','):'new user')+'.\nViewed: '+viewed.map(function(p){return p.name+'('+p.cat+')'}).join(', ')+'.\nCatalogue: '+PRODS.map(function(p){return 'ID:'+p.id+' "'+p.name+'" Rs.'+p.price+' '+p.cat+' ['+p.tags.join(',')+']'}).join(' | ')+'\nReturn ONLY JSON array of 6: [{"id":"p00X","reason":"8-10 word reason"}]. No other text.';
+    try{
+      var r=await fetch(CLAUDE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,max_tokens:600,system:'Return only valid JSON array.',messages:[{role:'user',content:prompt}]})});
+      var d=await r.json();
+      var picks=JSON.parse((d.content&&d.content[0]&&d.content[0].text)||'[]');
+      recs=picks.map(function(pk){var p=PRODS.find(function(x){return x.id===pk.id});return p?Object.assign({},p,{reason:pk.reason}):null}).filter(Boolean);
+    }catch(e){}
+  }
+  if(!recs.length){recs=PRODS.filter(function(p){return !S.viewed.includes(p.id)&&p.rating>=4.5}).sort(function(){return Math.random()-0.5}).slice(0,6).map(function(p){return Object.assign({},p,{reason:'Top rated'})})}
+  strip.innerHTML=recs.map(function(p){return '<div class="ai-rcard" onclick="openDetail(\''+p.id+'\')"><div class="ar-img">'+p.emoji+'</div><div class="ar-body"><div class="ar-name">'+p.name+'</div><div class="ar-why">✦ '+p.reason+'</div><div class="ar-price">₹'+p.price+'</div></div></div>'}).join('');
+  if(S.user){try{await db.from('recommendation_logs').insert({user_id:S.user.id,session_id:sid(),ab_variant:S.abVariant,strategy:S.abVariant==='treatment'?'claude':'collaborative',recommended_ids:recs.map(function(r){return r.id}),clicked_ids:[],purchased_ids:[]})}catch(e){}}
+}
+
+// ── AI STYLIST ────────────────────────────────────────────
+function openAI(){document.getElementById('ai-modal').classList.add('open');document.body.style.overflow='hidden'}
+function closeAI(){document.getElementById('ai-modal').classList.remove('open');document.body.style.overflow='';document.getElementById('ai-resp').style.display='none';document.getElementById('ai-resp-prods').style.display='none'}
+function preAI(t){document.getElementById('ai-inp').value=t;runAI()}
+async function runAI(){
+  var q=document.getElementById('ai-inp').value.trim();if(!q)return;
+  var box=document.getElementById('ai-resp'),prods=document.getElementById('ai-resp-prods');
+  box.style.display='block';prods.style.display='none';
+  box.innerHTML='<div class="ai-loading"><div class="ai-spin"></div>Finding perfect matches...</div>';
+  track(null,'search',{query:q,source:'ai-stylist'});
+  var prompt='Request: "'+q+'"\nCatalogue: '+PRODS.map(function(p){return 'ID:'+p.id+' "'+p.name+'" Rs.'+p.price+' '+p.cat+' star'+p.rating+' ['+p.tags.join(',')+']'}).join(' | ')+'\nWrite 2 helpful sentences, then on a new line: PRODUCTS: id1,id2,id3,id4,id5';
+  try{
+    var r=await fetch(CLAUDE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,max_tokens:800,stream:true,system:'You are NEXUS AI, a helpful shopping assistant. Be warm, specific, concise.',messages:[{role:'user',content:prompt}]})});
+    box.innerHTML='';var full='';
+    var rd=r.body.getReader(),dc=new TextDecoder(),buf='';
+    while(true){var chunk=await rd.read();if(chunk.done)break;buf+=dc.decode(chunk.value,{stream:true});var ln=buf.split('\n');buf=ln.pop();for(var i=0;i<ln.length;i++){if(!ln[i].startsWith('data: '))continue;try{var j=JSON.parse(ln[i].slice(6));if(j.delta&&j.delta.text){full+=j.delta.text;box.textContent+=j.delta.text}}catch(e){}}}
+    var m=full.match(/PRODUCTS:\s*([\w,\s]+)/);
+    if(m){box.textContent=full.replace(/PRODUCTS:.*/,'').trim();var ids=m[1].split(',').map(function(s){return s.trim()}).filter(Boolean);var found=ids.map(function(id){return PRODS.find(function(p){return p.id===id})}).filter(Boolean);if(found.length){prods.style.display='flex';prods.innerHTML=found.map(function(p){return '<div class="arp" onclick="closeAI();openDetail(\''+p.id+'\')"><div class="arp-img">'+p.emoji+'</div><div class="arp-info"><div class="arp-n">'+p.name+'</div><div class="arp-p">₹'+p.price+'</div></div></div>'}).join('')}}
+  }catch(e){box.textContent='I found some great options. Try a more specific query.'}
+}
+
+// ── WISHLIST ──────────────────────────────────────────────
+async function toggleWish(e,id){
+  if(e)e.stopPropagation();
+  if(S.wish.has(id)){
+    S.wish.delete(id);toast('🤍','Removed from wishlist');
+    if(S.user)try{await db.from('wishlists').delete().eq('user_id',S.user.id).eq('product_id',id)}catch(err){}
+  }else{
+    S.wish.add(id);toast('❤️','Added to wishlist');
+    if(S.user)try{await db.from('wishlists').upsert({user_id:S.user.id,product_id:id})}catch(err){}
+  }
+  track(id,S.wish.has(id)?'add_wish':'remove_wish');
+  renderGrid();
+}
+
+// ── CART ──────────────────────────────────────────────────
+function addCart(e,id){if(e)e.stopPropagation();addCartById(id)}
+
+async function addCartById(id){
+  var p=PRODS.find(function(x){return x.id===id});if(!p)return;
+  var ex=S.cart.find(function(x){return x.id===id});
+  if(ex)ex.qty++;
+  else S.cart.push({id:id,qty:1});
+  track(id,'add_cart');
+  if(S.user){
+    var qty=ex?ex.qty:1;
+    try{await db.from('carts').upsert({user_id:S.user.id,product_id:id,qty:qty})}catch(err){}
+  }
+  updateCartUI();
+  toast('🛍️',p.name+' added to cart');
+}
+
+function openCart(){document.getElementById('cart-bg').classList.add('on');document.getElementById('cart').classList.add('on')}
+function closeCart(){document.getElementById('cart-bg').classList.remove('on');document.getElementById('cart').classList.remove('on')}
+
+async function chQty(id,d){
+  var i=S.cart.find(function(x){return x.id===id});if(!i)return;
+  i.qty+=d;
+  if(i.qty<=0){
+    S.cart=S.cart.filter(function(x){return x.id!==id});
+    if(S.user)try{await db.from('carts').delete().eq('user_id',S.user.id).eq('product_id',id)}catch(e){}
+  }else if(S.user){
+    try{await db.from('carts').upsert({user_id:S.user.id,product_id:id,qty:i.qty})}catch(e){}
+  }
+  updateCartUI();
+}
+
+function updateCartUI(){
+  var cnt=S.cart.reduce(function(a,b){return a+b.qty},0);
+  document.getElementById('cart-cnt').textContent=cnt;
+  document.getElementById('cart-sub').textContent=cnt+' item'+(cnt!==1?'s':'');
+  var total=S.cart.reduce(function(a,b){var p=PRODS.find(function(x){return x.id===b.id});return a+b.qty*(p?p.price:0)},0);
+  document.getElementById('cart-tot').textContent='₹'+total.toLocaleString();
+  var save=S.cart.reduce(function(a,b){var p=PRODS.find(function(x){return x.id===b.id});return a+(p&&p.old?b.qty*(p.old-p.price):0)},0);
+  document.getElementById('cart-save').textContent=save>0?'You save ₹'+save+' on this order':'';
+  var el=document.getElementById('cart-items-el');
+  if(!S.cart.length){el.innerHTML='<div class="cart-empty"><p>Your cart is empty</p></div>';return}
+  el.innerHTML=S.cart.map(function(item){
+    var p=PRODS.find(function(x){return x.id===item.id});if(!p)return'';
+    return '<div class="ci"><div class="ci-img">'+p.emoji+'</div><div class="ci-info"><div class="ci-n">'+p.name+'</div><div class="ci-b">'+p.brand+'</div><div class="ci-row"><div class="ci-p">₹'+(p.price*item.qty).toLocaleString()+'</div><div class="qrow"><button class="qbtn" onclick="chQty(\''+p.id+'\',-1)">−</button><span class="qnum">'+item.qty+'</span><button class="qbtn" onclick="chQty(\''+p.id+'\',1)">+</button></div></div></div></div>';
+  }).join('');
+}
+
+async function doCheckout(){
+  if(!S.cart.length){toast('🛒','Cart is empty!');return}
+  var total=S.cart.reduce(function(a,b){var p=PRODS.find(function(x){return x.id===b.id});return a+b.qty*(p?p.price:0)},0);
+  if(S.user){
+    try{await db.from('orders').insert({user_id:S.user.id,session_id:sid(),ab_variant:S.abVariant,items:S.cart,total:total})}catch(e){}
+    try{await db.from('carts').delete().eq('user_id',S.user.id)}catch(e){}
+    for(var i=0;i<S.cart.length;i++){track(S.cart[i].id,'purchase',{ab_variant:S.abVariant})}
+  }
+  toast('🎉','Order placed! Thank you for shopping with NEXUS');
+  S.cart=[];updateCartUI();closeCart();
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function toast(icon,msg){
+  var s=document.getElementById('toasts');
+  var el=document.createElement('div');el.className='toast';
+  el.innerHTML='<span>'+icon+'</span>'+msg;
+  s.appendChild(el);
+  setTimeout(function(){el.classList.add('out');setTimeout(function(){el.remove()},250)},2800);
+}
+
+// ── EXPOSE TO onclick ATTRIBUTES ─────────────────────────
+window.switchTab=switchTab;
+
+async function signInGoogle(){
+  var errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  try{
+    var result=await db.auth.signInWithOAuth({
+      provider:'google',
+      options:{redirectTo:window.location.origin+window.location.pathname}
+    });
+    if(result.error)throw result.error;
+    // Redirects to Google — page will reload on return
+  }catch(e){errEl.textContent=e.message||'Google sign-in failed'}
+}
+
+// Handle OAuth redirect (user returns from Google)
+db.auth.onAuthStateChange(function(event, session){
+  if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED') && session && session.user && !S.user){
+    S.user=session.user;
+    afterAuth();
+  }
+});
+
+window.signInGoogle=signInGoogle;
+window.doAuth=doAuth;
+window.skipAuth=skipAuth;
+window.signOutUser=signOutUser;
+window.renderGrid=renderGrid;
+window.toggleBrand=toggleBrand;
+window.setCat=setCat;
+window.handleSearch=handleSearch;
+window.setPrice=setPrice;
+window.setSort=setSort;
+window.setRating=setRating;
+window.openDetail=openDetail;
+window.closeOv=closeOv;
+window.analyseImage=analyseImage;
+window.openAI=openAI;
+window.closeAI=closeAI;
+window.preAI=preAI;
+window.runAI=runAI;
+window.toggleWish=toggleWish;
+window.addCart=addCart;
+window.openCart=openCart;
+window.closeCart=closeCart;
+window.chQty=chQty;
+window.doCheckout=doCheckout;
+
+// ── KEYBOARD ─────────────────────────────────────────────
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeOv();closeAI();closeCart()}});
+
+// ── INIT ─────────────────────────────────────────────────
+document.getElementById('auth-overlay').classList.add('open');
+buildBrands();
+renderGrid();
+updateCartUI();
+</script>
+</body>
+</html>
