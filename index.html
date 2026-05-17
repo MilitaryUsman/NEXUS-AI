@@ -474,7 +474,7 @@ var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 // ─────────────────────────────────────────────────────────
 
 var db    = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-var CLAUDE = 'https://api.anthropic.com/v1/messages';
+var CLAUDE = '/.netlify/functions/claude';
 var MODEL  = 'claude-sonnet-4-20250514';
 
 var PRODS=[
